@@ -32,16 +32,7 @@ contract articleManager{
     function getArticlesCount()public view returns(uint){
         return articles.length;
     }
-
-    function transferToken(uint _serialNumber,uint _value)external payable
-    isRightSerial(_serialNumber)
-    {
-        require(address(this).balance >= _value);
-        require(msg.value == _value);
-        address _recipient= articles[_serialNumber].owner;
-        require(_recipient!=address(0));
-        _recipient.transfer(_value);
-        
+    function getArticleOwner(uint256 _serialNumber) public view returns(address){
+        return articles[_serialNumber].owner;
     }
-    
 }

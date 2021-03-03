@@ -8,7 +8,7 @@ const fs = require('fs');
 const app = express();
 const BlockchainLogin = require('./lib/BlockchainLogin');
 const BlockchainArticle = require('./lib/BlockchainArticle');
-const BlockchainAccount=require('./lib/BlockchianAccount');
+const BlockchainAccount = require('./lib/BlockchianAccount');
 
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -34,9 +34,9 @@ app.post('/loginpage', upload.single('keystore'), (request, response) => {
     })
 })
 app.get('/main', (request, response) => {
-    const address=request.session.wallet.address;
-    BlockchainAccount.getBalance(address).then((klay)=>{
-        const tpl=`
+    const address = request.session.wallet.address;
+    BlockchainAccount.getBalance(address).then((klay) => {
+        const tpl = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -61,19 +61,20 @@ app.get('/main', (request, response) => {
 
     </html>
     `;
-    response.send(tpl);
+        response.send(tpl);
     })
-    
+
 })
 app.post('/uploadpage', (request, response) => {
     BlockchainLogin.addWallet(request.session.wallet);
-    BlockchainArticle.uploadArticle(request.body.html, request.session.wallet.address);
+    BlockchainArticle.uploadArticle(request.body.html, request.session.wallet.address).then(()=>{
+    });
     response.writeHead(302, { Location: `/main` });
     response.send();
 })
-app.get('/patreon/:articleIndex',(request,response)=>{
-    const index=request.params.articleIndex;
-    var template=`<!DOCTYPE html>
+app.get('/patreon/:articleIndex', (request, response) => {
+    const index = request.params.articleIndex;
+    var template = `<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
@@ -93,14 +94,17 @@ app.get('/patreon/:articleIndex',(request,response)=>{
     </html>`;
     response.send(template);
 })
-app.post('/patreonpage/:articleIndex',(request,response)=>{
-    const index=request.params.articleIndex;
-    const klayAmount=request.body.klay;
-    const senderAddress=request.session.wallet.address;
-    BlockchainLogin.addWallet(request.session.wallet);
-    BlockchainArticle.transferToken(index,klayAmount,senderAddress)
-        response.writeHead(302, { Location: `/main` });
-        response.send();
+app.post('/patreonpage/:articleIndex', (request, response) => {
+    const index = request.params.articleIndex;
+    const klayAmount = request.body.klay;
+    const senderAddress = request.session.wallet.address;
+    BlockchainArticle.getArticleOwner(index).then((to) => {
+        BlockchainLogin.addWallet(request.session.wallet);
+        BlockchainAccount.transfer(senderAddress, to, klayAmount).then(() => {
+            response.writeHead(302, { Location: `/main` });
+            response.send();
+        })
+    })
 })
 app.get('/view', (request, response) => {
     BlockchainArticle.getArticles().then((articles) => {
